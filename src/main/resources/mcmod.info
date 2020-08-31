@@ -1,0 +1,16 @@
+[
+{
+  "modid": "healthscore",
+  "name": "Health Score",
+  "description": "Scoreboard Health Display Replacement",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["PK Anti"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

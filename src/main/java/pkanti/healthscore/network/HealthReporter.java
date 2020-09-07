@@ -20,12 +20,12 @@ public class HealthReporter {
     public static void onTick(TickEvent.PlayerTickEvent evt) {
         if (evt.player instanceof EntityPlayerMP) {
             int offset = 0;
-            if (evt.player.getActivePotionEffect(MobEffects.WITHER) != null)
-                offset = 2;
             if (evt.player.getActivePotionEffect(MobEffects.POISON) != null)
-                offset = 1;
+                offset |= 0x1;
+            if (evt.player.getActivePotionEffect(MobEffects.WITHER) != null)
+                offset |= 0x2;
             if (evt.player.world.getWorldInfo().isHardcoreModeEnabled())
-                offset += 3;
+                offset |= 0x4;
             PacketHandler.INSTANCE.sendToAll(new PacketHealth(evt.player.getUniqueID(),
                     new HealthMap.HealthInfo(
                     (int) Math.ceil(evt.player.getHealth()),

@@ -6,6 +6,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import pkanti.healthscore.HealthConfig;
 import pkanti.healthscore.HealthScore;
 
 import java.util.Map;
@@ -14,15 +15,12 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(value = Side.CLIENT)
 public class HealthMap {
     private Map<UUID, HealthInfo> health = Maps.newHashMap();
-    private boolean serverEnabled = false;
 
     @SubscribeEvent
     public void onPlayerJoinServer(FMLNetworkEvent.ClientConnectedToServerEvent evt) {
         Minecraft.getMinecraft().addScheduledTask(
                 () -> {
                     health.clear();
-                    serverEnabled = false;
-                    HealthScore.logInfo("Joined server!");
         });
     }
 
@@ -31,7 +29,6 @@ public class HealthMap {
     }
 
     public void update(UUID uuid, HealthInfo info) {
-        serverEnabled = true;
         HealthInfo stored = health.get(uuid);
         if (stored != null) {
             stored.update(info);
@@ -50,7 +47,7 @@ public class HealthMap {
         public HealthInfo(int health, int absorption, int offset, boolean fromServer) {
             this.health = health;
             this.absorption = absorption;
-            this.offset = offset;
+            this.offset = HealthConfig.enableEffects ? offset : 0;
             this.fromServer = fromServer;
             markDirty();
         }

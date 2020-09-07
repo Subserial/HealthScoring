@@ -1,10 +1,14 @@
 package pkanti.healthscore.client;
 
+import net.minecraft.client.gui.GuiPlayerTabOverlay;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import pkanti.healthscore.HealthScore;
 import pkanti.healthscore.ScoreboardRenderHelper;
 import pkanti.healthscore.common.CommonProxy;
 import pkanti.healthscore.data.HealthMap;
+
+import java.lang.reflect.Field;
 
 public class ClientProxy extends CommonProxy {
 

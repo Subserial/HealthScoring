@@ -20,6 +20,7 @@ import pkanti.healthscore.network.PacketHandler;
         name = HealthScore.NAME,
         version = HealthScore.VERSION,
         dependencies = "required-after:mantle@[1.3.3.55,)",
+        acceptableRemoteVersions = "*",
         acceptedMinecraftVersions = "[1.12,1.13)")
 public class HealthScore
 {
@@ -46,6 +47,9 @@ public class HealthScore
 
     public static void logInfo(String s) {
         logger.info(s);
+    }
+    public static void logError(String s) {
+        logger.error(s);
     }
 
 }

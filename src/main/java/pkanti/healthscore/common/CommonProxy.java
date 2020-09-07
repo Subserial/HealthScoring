@@ -7,6 +7,7 @@ import pkanti.healthscore.network.PacketHandler;
 
 public class CommonProxy {
     public HealthMap map = null;
+    public boolean loadSuccessful = true;
     protected boolean isMantleLoaded;
 
     public void preInit() {

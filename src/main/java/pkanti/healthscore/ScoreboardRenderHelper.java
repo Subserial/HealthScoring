@@ -14,15 +14,20 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.GameType;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import pkanti.healthscore.data.HealthMap;
 import slimeknights.mantle.Mantle;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Mod.EventBusSubscriber(modid = HealthScore.MODID, value = Side.CLIENT)
 public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
@@ -30,11 +35,25 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
     private static final ResourceLocation ICON_HEARTS = new ResourceLocation(Mantle.modId, "textures/gui/hearts.png");
     private static final ResourceLocation ICON_ABSORB = new ResourceLocation(Mantle.modId, "textures/gui/absorb.png");
 
+    public static final Field FIELD_HEADER = ObfuscationReflectionHelper.findField(GuiPlayerTabOverlay.class,"field_175256_i");
+    private final Ordering<NetworkPlayerInfo> ORDERING;
+
     private final Minecraft mc = Minecraft.getMinecraft();
 
-    public ScoreboardRenderHelper() {super( Minecraft.getMinecraft(), Minecraft.getMinecraft().ingameGUI); }
+    public ScoreboardRenderHelper() {
+        super(Minecraft.getMinecraft(), Minecraft.getMinecraft().ingameGUI);
+        Ordering<NetworkPlayerInfo> tmpORDERING = null;
+        try {
+            Field FIELD_ORDERING = ObfuscationReflectionHelper.findField(GuiPlayerTabOverlay.class, "field_175252_a");
+            tmpORDERING = (Ordering<NetworkPlayerInfo>) FIELD_ORDERING.get(GuiPlayerTabOverlay.class);
+        } catch (Exception ex) {
+            HealthScore.logInfo("Error in loading reflection fields for scoreboard, disabling on client");
+            tmpORDERING = null;
+        }
+        ORDERING = tmpORDERING;
+    }
 
-    @SubscribeEvent(priority = EventPriority.LOW)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void renderScoreboardHealth(RenderGameOverlayEvent.Pre evt) {
         if (evt.getType() != RenderGameOverlayEvent.ElementType.PLAYER_LIST || evt.isCanceled())
             return;
@@ -66,7 +85,7 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOW)
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void renderScoreboardHealthPost(RenderGameOverlayEvent.Post evt) {
         if (evt.getType() != RenderGameOverlayEvent.ElementType.PLAYER_LIST || evt.isCanceled())
             return;
@@ -76,12 +95,20 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
         if (objective == null || objective.getRenderType() != IScoreCriteria.EnumRenderType.HEARTS)
             return;
 
+
         // extra setup stuff
         int width = evt.getResolution().getScaledWidth();
         int updateCounter = mc.ingameGUI.getUpdateCounter();
-        ITextComponent header = mc.ingameGUI.getTabList().header;
         NetHandlerPlayClient client = mc.player.connection;
-        List<NetworkPlayerInfo> players = ENTRY_ORDERING.sortedCopy(client.getPlayerInfoMap());
+        ITextComponent header;
+        List<NetworkPlayerInfo> players;
+        players = ORDERING.sortedCopy(client.getPlayerInfoMap());
+        try {
+            header = (ITextComponent) FIELD_HEADER.get(mc.ingameGUI.getTabList());
+        } catch (IllegalAccessException ex) {
+            // debug mostly
+            header = null;
+        }
 
 
         mc.mcProfiler.startSection("scoreboardHealth");
@@ -105,7 +132,7 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
 
         if (header != null)
         {
-            List<String> headers = this.mc.fontRenderer.listFormattedStringToWidth(this.header.getFormattedText(), width - 50);
+            List<String> headers = this.mc.fontRenderer.listFormattedStringToWidth(header.getFormattedText(), width - 50);
 
             for (String s : headers)
             {
@@ -130,17 +157,17 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             NetworkPlayerInfo info = players.get(i);
             GameProfile profile = info.getGameProfile();
 
-            // if (i < list.size()) // always true
             if (encrypted) {
                 posX += 9;
             }
-            String playerName = profile.getName();
 
             if (info.getGameType() != GameType.SPECTATOR) {
                 int heartX = posX + maxTextWidth + 1;
 
                 HealthMap.HealthInfo hinfo = HealthScore.proxy.map.get(info.getGameProfile().getId());
-                // drawScoreboardValues(objective, posY, playerName, heartX, afterX, info)
+
+                // reset scoreboard values for compatibility
+                scoreboard.getOrCreateScore(profile.getName(), objective).setScorePoints(hinfo.getHealthTotal());
 
                 int health = hinfo.getHealth();
                 int absorp = hinfo.getAbsorption();
@@ -170,7 +197,6 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             }
         }
 
-        evt.setCanceled(true);
         GlStateManager.disableBlend();
         GlStateManager.disableAlpha();
         mc.mcProfiler.endSection();
@@ -179,15 +205,32 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
     private void drawHearts(float posX, float posY, float delta, int health, int count, int segmentStart, int effect, boolean blink, boolean absorp) {
         int segmentEnd = segmentStart + count;
 
+        // Parse offset value
+        int vanillaXOffset = 0;
+        int vanillaYOffset = 0;
+        int mantleXOffset = 0;
+        int mantleYOffset = 0;
+        if ((effect & 0x1) != 0) { // poison (overrides wither)
+            vanillaXOffset += 36;
+            mantleYOffset += 9;
+        } else if ((effect & 0x2) != 0) { // wither
+            vanillaXOffset += 72;
+            mantleYOffset += 18;
+        }
+        if ((effect & 0x4) != 0) { // hardcore
+            vanillaYOffset += 45;
+            mantleYOffset += 27;
+        }
+
         // first pass: containers
         if (absorp && health > 20) {
             for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                if (health > 20 + segment * 2) {
+                if (health > 20 + segment * 2 + 1) {
                     this.mc.getTextureManager().bindTexture(ICON_ABSORB);
                     this.drawTexturedModalRect(posX + segment * delta, posY, 0, 54, 9, 9);
                 } else {
                     this.mc.getTextureManager().bindTexture(ICONS);
-                    this.drawTexturedModalRect(posX + segment * delta, posY, 16, 0, 9, 9);
+                    this.drawTexturedModalRect(posX + segment * delta, posY, 16, vanillaYOffset, 9, 9);
                     if (health == 20 + segment * 2 + 1) {
                         this.mc.getTextureManager().bindTexture(ICON_ABSORB);
                         this.drawTexturedModalRect(posX + segment * delta, posY, 0, 54, 5, 9);
@@ -197,7 +240,7 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
         } else {
             this.mc.getTextureManager().bindTexture(ICONS);
             for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                this.drawTexturedModalRect(posX + segment * delta, posY, blink ? 25 : 16, 0, 9, 9);
+                this.drawTexturedModalRect(posX + segment * delta, posY, blink ? 25 : 16, vanillaYOffset, 9, 9);
             }
         }
 
@@ -207,9 +250,9 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 this.mc.getTextureManager().bindTexture(ICONS);
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     if (health == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 169, 0, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 169 + vanillaXOffset, vanillaYOffset, 9, 9);
                     } else if (health > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 160, 0, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 160 + vanillaXOffset, vanillaYOffset, 9, 9);
                     }
                 }
             }
@@ -220,13 +263,13 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
                     if (lastColorHeart > 0 || health > 40) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (lastColorHeart - 1), effect, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9, effect, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1), effect, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }
@@ -235,9 +278,9 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 this.mc.getTextureManager().bindTexture(ICONS);
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     if (health == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 61, 0, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 61 + vanillaXOffset, vanillaYOffset, 9, 9);
                     } else if (health > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 52, 0, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 52 + vanillaXOffset, vanillaYOffset, 9, 9);
                     }
                 }
             }
@@ -248,13 +291,13 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
                     if (lastColorHeart > 0 || health > 40) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (lastColorHeart - 1), effect, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9, effect, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1), effect, 9, 9);
+                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }

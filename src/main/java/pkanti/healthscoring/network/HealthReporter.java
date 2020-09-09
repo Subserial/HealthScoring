@@ -1,19 +1,15 @@
-package pkanti.healthscore.network;
+package pkanti.healthscoring.network;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.MobEffects;
-import net.minecraftforge.event.entity.EntityEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
-import pkanti.healthscore.HealthScore;
-import pkanti.healthscore.data.HealthMap;
+import pkanti.healthscoring.HealthScoring;
+import pkanti.healthscoring.data.HealthMap;
 
-@Mod.EventBusSubscriber(modid = HealthScore.MODID, value = Side.SERVER)
+@Mod.EventBusSubscriber(modid = HealthScoring.MODID, value = Side.SERVER)
 public class HealthReporter {
 
     @SubscribeEvent

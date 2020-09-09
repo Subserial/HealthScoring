@@ -1,4 +1,4 @@
-package pkanti.healthscore.data;
+package pkanti.healthscoring.data;
 
 import com.google.common.collect.Maps;
 import net.minecraft.client.Minecraft;
@@ -6,8 +6,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import net.minecraftforge.fml.relauncher.Side;
-import pkanti.healthscore.HealthConfig;
-import pkanti.healthscore.HealthScore;
+import pkanti.healthscoring.HealthConfig;
 
 import java.util.Map;
 import java.util.UUID;

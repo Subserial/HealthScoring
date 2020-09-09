@@ -18,39 +18,30 @@ repositories {
 }
         
 apply plugin: 'net.minecraftforge.gradle'
-// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
-apply plugin: 'eclipse'
+apply plugin: 'java'
 apply plugin: 'maven-publish'
-
-version = '1.0'
-group = 'pkanti.healthscore' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'healthscore'
 
 // External properties
 ext.configFile = file "build.properties"
 configFile.withReader {
-    // Load config.  It shall from now be referenced as simply config or project.config
     def prop = new Properties()
     prop.load(it)
     project.ext.config = new ConfigSlurper().parse prop
 }
 
+version = "${config.version}.${config.build_number}"
+ext.full_version = "${config.mc_version}-${project.version}"
+group = 'pkanti.healthscoring' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'healthscoring'
+
+ext.tempBuildDir = 'build/sources/java'
+
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
 minecraft {
-    // The mappings can be changed at any time, and must be in the following format.
-    // snapshot_YYYYMMDD   Snapshot are built nightly.
-    // stable_#            Stables are built at the discretion of the MCP team.
-    // Use non-default mappings at your own risk. they may not always work.
-    // Simply re-run your setup task after changing the mappings to update your workspace.
-    //mappings channel: 'snapshot', version: '20171003-1.12'
     mappings channel: 'snapshot', version: '20171003-1.12'
-    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    accessTransformer = file('src/main/resources/META-INF/hs_at.cfg')
 
-    //accessTransformer = file('src/main/resources/META-INF/at.cfg')
-
-    // Default run configurations.
-    // These can be tweaked, removed, or duplicated as needed.
     runs {
         client {
             workingDirectory project.file('run')
@@ -74,44 +65,27 @@ minecraft {
 }
 
 dependencies {
-    // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
-    // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
-    // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
 
     compile "slimeknights.mantle:Mantle:${config.mc_version_short}-${config.mantle_version}"
-
-    // You may put jars on which you depend on in ./libs or you may define them like so..
-    // compile "some.group:artifact:version:classifier"
-    // compile "some.group:artifact:version"
-
-    // Real examples
-    // compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
-    // compile 'com.googlecode.efficient-java-matrix-library:ejml:0.24' // adds ejml to the dev env
-
-    // The 'provided' configuration is for optional dependencies that exist at compile-time but might not at runtime.
-    // provided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-
-    // These dependencies get remapped to your current MCP mappings
-    // deobf 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-
-    // For more info...
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
-
 }
 
-// Example for how to get properties into the manifest for reading by the runtime..
+processResources {
+    from (sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+
+        expand 'version': project.version, 'mcversion': config.mc_version, 'mantleversion': config.mantle_version
+    }
+
+    from (sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
 jar {
     manifest {
         attributes([
-            "Specification-Title": "healthscore",
-            "Specification-Vendor": "PK Anti",
-            "Specification-Version": "1", // We are version 1 of ourselves
-            "Implementation-Title": project.name,
-            "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"PK Anti",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+            "FMLAT": "hs_at.cfg",
         ])
     }
 }
@@ -135,6 +109,37 @@ publishing {
     }
 }
 
+
 sourceSets {
-    main { output.resourcesDir = output.classesDir }
+    main {
+        output.resourcesDir = output.classesDir // mcmod.info in debug build
+    }
 }
+
+// FOR POSTERITY
+// The following token replacement took me a few evenings to figure out
+// Issues I came across:
+// 1. Never imported ReplaceTokens (IntelliJ installed ant for me so I had no idea)
+// 2. Modified files weren't compiled (manually set compileJava.source)
+// 3. expand vs ReplaceTokens (works the same but expand doesn't require an import (doesn't matter much))
+// 4. Very kind MinecraftForge questions and one angry dragon
+
+task updateVersion(type: Copy) {
+    from (sourceSets.main.java.srcDirs) { exclude 'mcmod.info' }
+    into project.tempBuildDir
+    expand "GRADLE_VERSION": project.full_version
+}
+
+compileJava.source = files(project.tempBuildDir)
+compileJava.dependsOn(updateVersion)
+
+task incrementBuildNumber {
+    doFirst {
+        config.build_number = (config.build_number.toString().toInteger()) + 1
+        configFile.withWriter {
+            config.toProperties().store(it, "")
+        }
+    }
+}
+
+defaultTasks 'clean', 'build', 'incrementBuildNumber'

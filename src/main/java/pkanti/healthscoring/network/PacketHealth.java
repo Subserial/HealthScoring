@@ -1,16 +1,13 @@
-package pkanti.healthscore.network;
+package pkanti.healthscoring.network;
 
-import com.google.common.collect.Maps;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.network.NetworkPlayerInfo;
-import net.minecraft.util.Tuple;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import pkanti.healthscore.HealthScore;
-import pkanti.healthscore.data.HealthMap;
+import pkanti.healthscoring.HealthScoring;
+import pkanti.healthscoring.data.HealthMap;
 
 import java.util.UUID;
 
@@ -46,7 +43,7 @@ public class PacketHealth implements IMessage {
         @Override
         public IMessage onMessage(PacketHealth message, MessageContext ctx) {
             Minecraft.getMinecraft().addScheduledTask(
-                    () -> HealthScore.proxy.map.update(message.id, message.info)
+                    () -> HealthScoring.proxy.map.update(message.id, message.info)
             );
             return null;
         }

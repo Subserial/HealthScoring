@@ -1,6 +1,5 @@
-package pkanti.healthscore;
+package pkanti.healthscoring.client;
 
-import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
@@ -17,40 +16,26 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
-import pkanti.healthscore.data.HealthMap;
+import pkanti.healthscoring.HealthConfig;
+import pkanti.healthscoring.HealthScoring;
+import pkanti.healthscoring.data.HealthMap;
 import slimeknights.mantle.Mantle;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-@Mod.EventBusSubscriber(modid = HealthScore.MODID, value = Side.CLIENT)
+@Mod.EventBusSubscriber(modid = HealthScoring.MODID, value = Side.CLIENT)
 public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
-    // taken from Mantle
+    // resources from Mantle
     private static final ResourceLocation ICON_HEARTS = new ResourceLocation(Mantle.modId, "textures/gui/hearts.png");
     private static final ResourceLocation ICON_ABSORB = new ResourceLocation(Mantle.modId, "textures/gui/absorb.png");
 
-    public static final Field FIELD_HEADER = ObfuscationReflectionHelper.findField(GuiPlayerTabOverlay.class,"field_175256_i");
-    private final Ordering<NetworkPlayerInfo> ORDERING;
 
     private final Minecraft mc = Minecraft.getMinecraft();
 
     public ScoreboardRenderHelper() {
         super(Minecraft.getMinecraft(), Minecraft.getMinecraft().ingameGUI);
-        Ordering<NetworkPlayerInfo> tmpORDERING = null;
-        try {
-            Field FIELD_ORDERING = ObfuscationReflectionHelper.findField(GuiPlayerTabOverlay.class, "field_175252_a");
-            tmpORDERING = (Ordering<NetworkPlayerInfo>) FIELD_ORDERING.get(GuiPlayerTabOverlay.class);
-        } catch (Exception ex) {
-            HealthScore.logInfo("Error in loading reflection fields for scoreboard, disabling on client");
-            tmpORDERING = null;
-        }
-        ORDERING = tmpORDERING;
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -69,10 +54,10 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             String name = net.getGameProfile().getName();
             Score score = scoreboard.getOrCreateScore(name, objective);
             int displayScore = score.getScorePoints();
-            HealthMap.HealthInfo health = HealthScore.proxy.map.get(uuid);
+            HealthMap.HealthInfo health = HealthScoring.proxy.map.get(uuid);
             if (health == null) {
                 health = new HealthMap.HealthInfo(displayScore, 0, 0, false);
-                HealthScore.proxy.map.update(uuid, health);
+                HealthScoring.proxy.map.update(uuid, health);
             }
             score.setScorePoints(0);
             net.setDisplayHealth(0);
@@ -102,13 +87,8 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
         NetHandlerPlayClient client = mc.player.connection;
         ITextComponent header;
         List<NetworkPlayerInfo> players;
-        players = ORDERING.sortedCopy(client.getPlayerInfoMap());
-        try {
-            header = (ITextComponent) FIELD_HEADER.get(mc.ingameGUI.getTabList());
-        } catch (IllegalAccessException ex) {
-            // debug mostly
-            header = null;
-        }
+        players = ENTRY_ORDERING.sortedCopy(client.getPlayerInfoMap());
+        header = mc.ingameGUI.getTabList().header;
 
 
         mc.mcProfiler.startSection("scoreboardHealth");
@@ -164,7 +144,7 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             if (info.getGameType() != GameType.SPECTATOR) {
                 int heartX = posX + maxTextWidth + 1;
 
-                HealthMap.HealthInfo hinfo = HealthScore.proxy.map.get(info.getGameProfile().getId());
+                HealthMap.HealthInfo hinfo = HealthScoring.proxy.map.get(info.getGameProfile().getId());
 
                 // reset scoreboard values for compatibility
                 scoreboard.getOrCreateScore(profile.getName(), objective).setScorePoints(hinfo.getHealthTotal());

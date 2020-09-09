@@ -1,8 +1,5 @@
-package pkanti.healthscore;
+package pkanti.healthscoring;
 
-import net.minecraft.init.Blocks;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.Mod.EventHandler;
@@ -12,28 +9,25 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import pkanti.healthscore.common.CommonProxy;
-import pkanti.healthscore.network.HealthReporter;
-import pkanti.healthscore.network.PacketHandler;
+import pkanti.healthscoring.common.CommonProxy;
 
-@Mod(modid = HealthScore.MODID,
-        name = HealthScore.NAME,
-        version = HealthScore.VERSION,
-        dependencies = "required-after:mantle@[1.3.3.55,)",
+@Mod(modid = HealthScoring.MODID,
+        name = HealthScoring.NAME,
+        version = "${GRADLE_VERSION}",
         acceptableRemoteVersions = "*",
-        acceptedMinecraftVersions = "[1.12,1.13)")
-public class HealthScore
+        acceptedMinecraftVersions = "[1.12,1.13)",
+        useMetadata = true)
+public class HealthScoring
 {
-    public static final String MODID = "healthscore";
-    public static final String NAME = "Health Score";
-    public static final String VERSION = "1.0";
+    public static final String MODID = "healthscoring";
+    public static final String NAME = "Health Scoring";
 
-    private static Logger logger = LogManager.getLogger("HealthScore");
+    private static Logger logger = LogManager.getLogger("HealthScoring");
 
-    @Instance(HealthScore.MODID)
-    public static HealthScore INSTANCE;
+    @Instance(HealthScoring.MODID)
+    public static HealthScoring INSTANCE;
 
-    @SidedProxy(clientSide = "pkanti.healthscore.client.ClientProxy", serverSide = "pkanti.healthscore.server.ServerProxy")
+    @SidedProxy(clientSide = "pkanti.healthscoring.client.ClientProxy", serverSide = "pkanti.healthscoring.server.ServerProxy")
     public static CommonProxy proxy;
 
     @EventHandler

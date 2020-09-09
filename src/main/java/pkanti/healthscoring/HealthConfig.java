@@ -1,9 +1,9 @@
-package pkanti.healthscore;
+package pkanti.healthscoring;
 
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.Config.*;
 
-@Config(modid = HealthScore.MODID)
+@Config(modid = HealthScoring.MODID)
 public class HealthConfig {
 
     @Comment({"Enable appending absorption hearts to scoreboard values. (default: true)",

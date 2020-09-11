@@ -39,7 +39,7 @@ ext.tempBuildDir = 'build/sources/java'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
 minecraft {
-    mappings channel: 'snapshot', version: '20171003-1.12'
+    mappings channel: 'snapshot', version: config.mappings_version
     accessTransformer = file('src/main/resources/META-INF/hs_at.cfg')
 
     runs {
@@ -65,9 +65,9 @@ minecraft {
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
+    minecraft "net.minecraftforge:forge:${config.mc_version}-${config.forge_version}"
 
-    compile "slimeknights.mantle:Mantle:${config.mc_version_short}-${config.mantle_version}"
+    compile "slimeknights.mantle:Mantle:${config.mc_version_mantle}-${config.mantle_version}"
 }
 
 processResources {

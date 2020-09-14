@@ -95,29 +95,6 @@ jar.finalizedBy('reobfJar')
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
 //publish.dependsOn('reobfJar')
 
-/*
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file:///${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
- */
-
-// FOR POSTERITY
-// The following token replacement took me a few evenings to figure out
-// Issues I came across:
-// 1. Never imported ReplaceTokens (IntelliJ installed ant for me so I had no idea)
-// 2. Modified files weren't compiled (manually set compileJava.source)
-// 3. expand vs ReplaceTokens (works the same but expand doesn't require an import (doesn't matter much))
-// 4. Very kind MinecraftForge questions and one angry dragon
-
 task incrementBuildNumber {
     doFirst {
         config.build_number = (config.build_number.toString().toInteger()) + 1

@@ -7,12 +7,8 @@ import pkanti.healthscoring.network.PacketHandler;
 public class CommonProxy {
     public HealthMap map = null;
 
-    public void preInit() {
+    public void commonSetup() {
         PacketHandler.registerPackets();
-        HealthScoring.logInfo("Registered packets");
+        HealthScoring.logInfo("Registered HealthInfo Packets");
     }
-
-    public void init() {}
-
-    public void postInit() {}
 }

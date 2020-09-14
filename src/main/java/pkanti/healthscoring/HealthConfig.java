@@ -1,21 +1,32 @@
 package pkanti.healthscoring;
 
-import net.minecraftforge.common.config.Config;
-import net.minecraftforge.common.config.Config.*;
 
-@Config(modid = HealthScoring.MODID)
+import org.apache.commons.lang3.tuple.Pair;
+import net.minecraftforge.common.ForgeConfigSpec;
+
 public class HealthConfig {
 
-    @Comment({"Enable appending absorption hearts to scoreboard values. (default: true)",
-              "Absorption hearts increase the render complexity due to overlapping vanilla/modded textures,",
-              "but only when a player has any absorption hearts.",
-              "Disabling this will meld absorption into the total health displayed."})
-    @Name("Enable Absorption Hearts on Scoreboard")
-    public static boolean enableAbsorption = true;
+    public static class Common {
+        public final ForgeConfigSpec.BooleanValue enableAbsorption;
+        public final ForgeConfigSpec.BooleanValue enableEffects;
 
-    @Comment({"Enable displaying effects such as regen, posion, wither. (default: true)",
-            "On the client, this enables showing effects received.",
-            "On the server, this enables sending the players status information."})
-    @Name("Enable Displaying Effects")
-    public static boolean enableEffects = true;
+        public Common(ForgeConfigSpec.Builder builder) {
+            builder.push("enableAbsorption");
+            enableAbsorption = builder
+                    .comment("Enable extra absorption rendering when provided by server")
+                    .define("enabled", true);
+            builder.push("enableEffects");
+            enableEffects = builder
+                    .comment("Enable rendering health effects (poison, wither, hardcore) when provided by server")
+                    .define("enabled", true);
+        }
+    }
+
+    public static final Common COMMON;
+    public static final ForgeConfigSpec COMMON_SPEC;
+    static {
+        final Pair<Common, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(Common::new);
+        COMMON = specPair.getLeft();
+        COMMON_SPEC = specPair.getRight();
+    }
 }

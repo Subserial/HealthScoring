@@ -1,43 +1,47 @@
 package pkanti.healthscoring;
 
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ExtensionPoint;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.network.FMLNetworkConstants;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import pkanti.healthscoring.client.ClientProxy;
 import pkanti.healthscoring.common.CommonProxy;
+import pkanti.healthscoring.server.ServerProxy;
 
-@Mod(modid = HealthScoring.MODID,
-        name = HealthScoring.NAME,
-        version = "${GRADLE_VERSION}",
-        acceptableRemoteVersions = "*",
-        acceptedMinecraftVersions = "[1.12,1.13)",
-        useMetadata = true)
+@Mod(HealthScoring.MODID)
 public class HealthScoring
 {
     public static final String MODID = "healthscoring";
     public static final String NAME = "Health Scoring";
 
-    private static Logger logger = LogManager.getLogger("HealthScoring");
+    private static Logger logger = LogManager.getLogger(NAME);
 
-    @Instance(HealthScoring.MODID)
     public static HealthScoring INSTANCE;
 
-    @SidedProxy(clientSide = "pkanti.healthscoring.client.ClientProxy", serverSide = "pkanti.healthscoring.server.ServerProxy")
     public static CommonProxy proxy;
 
-    @EventHandler
-    public void preInit(FMLPreInitializationEvent evt) { proxy.preInit(); }
+    public HealthScoring() {
+        INSTANCE = this;
+        proxy = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> ServerProxy::new);
 
-    @EventHandler
-    public void init(FMLInitializationEvent evt) { proxy.init(); }
+        ModLoadingContext modContext = ModLoadingContext.get();
+        modContext.registerConfig(ModConfig.Type.COMMON, HealthConfig.COMMON_SPEC);
+        modContext.registerExtensionPoint(ExtensionPoint.DISPLAYTEST,
+                () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
 
-    @EventHandler
-    public void postInit(FMLPostInitializationEvent evt) { proxy.postInit(); }
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        modBus.addListener(this::commonSetup);
+    }
+
+    public void commonSetup(FMLCommonSetupEvent evt) { proxy.commonSetup(); }
 
     public static void logInfo(String s) {
         logger.info(s);

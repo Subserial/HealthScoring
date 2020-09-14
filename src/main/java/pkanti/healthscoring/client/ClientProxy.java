@@ -8,21 +8,13 @@ import pkanti.healthscoring.data.HealthMap;
 public class ClientProxy extends CommonProxy {
 
     @Override
-    public void preInit() {
+    public void commonSetup() {
         map = new HealthMap();
-        super.preInit();
-    }
-
-    @Override
-    public void init() {
         MinecraftForge.EVENT_BUS.register(new ScoreboardRenderHelper());
-        HealthScoring.logInfo("Registered Scoreboard");
+        HealthScoring.logInfo("Registered Scoreboard Renderer");
         MinecraftForge.EVENT_BUS.register(map);
-        HealthScoring.logInfo("Registered Map");
-        super.init();
+        HealthScoring.logInfo("Registered Health Map");
+        super.commonSetup();
     }
-
-    @Override
-    public void postInit() { super.postInit(); }
 
 }

@@ -3,20 +3,19 @@ package pkanti.healthscoring.client;
 import com.google.common.collect.Ordering;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiPlayerTabOverlay;
-import net.minecraft.client.network.NetHandlerPlayClient;
-import net.minecraft.client.network.NetworkPlayerInfo;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.overlay.PlayerTabOverlayGui;
+import net.minecraft.client.network.play.ClientPlayNetHandler;
+import net.minecraft.client.network.play.NetworkPlayerInfo;
 import net.minecraft.scoreboard.*;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.GameType;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
 import pkanti.healthscoring.HealthConfig;
 import pkanti.healthscoring.HealthScoring;
 import pkanti.healthscoring.data.HealthMap;
@@ -25,17 +24,17 @@ import slimeknights.mantle.Mantle;
 import java.util.List;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = HealthScoring.MODID, value = Side.CLIENT)
-public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
+@Mod.EventBusSubscriber(modid = HealthScoring.MODID, value = Dist.CLIENT)
+public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
     // resources from Mantle
     private static final ResourceLocation ICON_HEARTS = new ResourceLocation(Mantle.modId, "textures/gui/hearts.png");
     private static final ResourceLocation ICON_ABSORB = new ResourceLocation(Mantle.modId, "textures/gui/absorb.png");
 
 
-    private final Minecraft mc = Minecraft.getMinecraft();
+    private final Minecraft mc = Minecraft.getInstance();
 
     public ScoreboardRenderHelper() {
-        super(Minecraft.getMinecraft(), Minecraft.getMinecraft().ingameGUI);
+        super(Minecraft.getInstance(), Minecraft.getInstance().ingameGUI);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -45,10 +44,10 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
 
         Scoreboard scoreboard = mc.world.getScoreboard();
         ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(0);
-        if (objective == null || objective.getRenderType() != IScoreCriteria.EnumRenderType.HEARTS)
+        if (objective == null || objective.getRenderType() != ScoreCriteria.RenderType.HEARTS)
             return;
 
-        NetHandlerPlayClient client = mc.player.connection;
+        ClientPlayNetHandler client = mc.player.connection;
         for (NetworkPlayerInfo net : client.getPlayerInfoMap()) {
             UUID uuid = net.getGameProfile().getId();
             String name = net.getGameProfile().getName();
@@ -56,8 +55,9 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             int displayScore = score.getScorePoints();
             HealthMap.HealthInfo health = HealthScoring.proxy.map.get(uuid);
             if (health == null) {
-                health = new HealthMap.HealthInfo(displayScore, 0, 0, false);
-                HealthScoring.proxy.map.update(uuid, health);
+                health = HealthScoring.proxy.map.putLocal(uuid, displayScore);
+            } else if (!health.isFromServer()) {
+                health.update(displayScore);
             }
             score.setScorePoints(0);
             net.setDisplayHealth(0);
@@ -77,26 +77,25 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
 
         Scoreboard scoreboard = mc.world.getScoreboard();
         ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(0);
-        if (objective == null || objective.getRenderType() != IScoreCriteria.EnumRenderType.HEARTS)
+        if (objective == null || objective.getRenderType() != ScoreCriteria.RenderType.HEARTS)
             return;
 
 
         // extra setup stuff
-        int width = evt.getResolution().getScaledWidth();
-        int updateCounter = mc.ingameGUI.getUpdateCounter();
-        NetHandlerPlayClient client = mc.player.connection;
-        ITextComponent header;
+        int width = evt.getWindow().getScaledWidth();
+        int updateCounter = mc.ingameGUI.getTicks();
+        ClientPlayNetHandler client = mc.player.connection;
         List<NetworkPlayerInfo> players;
         players = ENTRY_ORDERING.sortedCopy(client.getPlayerInfoMap());
-        header = mc.ingameGUI.getTabList().header;
+        ITextComponent header = mc.ingameGUI.getTabList().header;
 
 
-        mc.mcProfiler.startSection("scoreboardHealth");
+        mc.getProfiler().startSection("scoreboardHealth");
 
         // mimic intermediate variables
         int maxTextWidth = 0;
         for (NetworkPlayerInfo inst : players) {
-            int textWidth = mc.fontRenderer.getStringWidth(this.getPlayerName(inst));
+            int textWidth = mc.fontRenderer.getStringWidth(this.getDisplayName(inst).getFormattedText());
             maxTextWidth = Math.max(maxTextWidth, textWidth);
         }
         players = players.subList(0, Math.min(players.size(), 80));
@@ -129,10 +128,12 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             int posX = startX + xindex * (rectLength + 5);
             int posY = startY + yindex * 9;
 
+            /*
             GlStateManager.color(1, 1, 1, 1);
             GlStateManager.enableAlpha();
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+             */
 
             NetworkPlayerInfo info = players.get(i);
             GameProfile profile = info.getGameProfile();
@@ -151,7 +152,7 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
 
                 int health = hinfo.getHealth();
                 int absorp = hinfo.getAbsorption();
-                if (!HealthConfig.enableAbsorption) {
+                if (!HealthConfig.COMMON.enableAbsorption.get()) {
                     health += absorp;
                     absorp = 0;
                 }
@@ -159,7 +160,7 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 hinfo.markDirty();
                 int absorpCount = Math.min(absorp + 1, 20) / 2;
                 int renderCount = 10 + absorpCount;
-                float delta = Math.min(86.0F / renderCount, 9.0F);
+                int delta = MathHelper.floor(Math.min(86.0F / renderCount, 9.0F));
                 boolean blink = info.getHealthBlinkTime() > updateCounter && ((info.getHealthBlinkTime() - updateCounter) / 3) % 2 == 1;
 
                 if (absorp == 0) {
@@ -176,13 +177,14 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 }
             }
         }
-
+/*
         GlStateManager.disableBlend();
         GlStateManager.disableAlpha();
-        mc.mcProfiler.endSection();
+ */
+        mc.getProfiler().endSection();
     }
 
-    private void drawHearts(float posX, float posY, float delta, int health, int count, int segmentStart, int effect, boolean blink, boolean absorp) {
+    private void drawHearts(int posX, int posY, int delta, int health, int count, int segmentStart, int effect, boolean blink, boolean absorp) {
         int segmentEnd = segmentStart + count;
 
         // Parse offset value
@@ -207,32 +209,32 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             for (int segment = segmentStart; segment < segmentEnd; segment++) {
                 if (health > 20 + segment * 2 + 1) {
                     this.mc.getTextureManager().bindTexture(ICON_ABSORB);
-                    this.drawTexturedModalRect(posX + segment * delta, posY, 0, 54, 9, 9);
+                    this.blit(posX + segment * delta, posY, 0, 54, 9, 9);
                 } else {
-                    this.mc.getTextureManager().bindTexture(ICONS);
-                    this.drawTexturedModalRect(posX + segment * delta, posY, 16, vanillaYOffset, 9, 9);
+                    this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
+                    this.blit(posX + segment * delta, posY, 16, vanillaYOffset, 9, 9);
                     if (health == 20 + segment * 2 + 1) {
                         this.mc.getTextureManager().bindTexture(ICON_ABSORB);
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 0, 54, 5, 9);
+                        this.blit(posX + segment * delta, posY, 0, 54, 5, 9);
                     }
                 }
             }
         } else {
-            this.mc.getTextureManager().bindTexture(ICONS);
+            this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
             for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                this.drawTexturedModalRect(posX + segment * delta, posY, blink ? 25 : 16, vanillaYOffset, 9, 9);
+                this.blit(posX + segment * delta, posY, blink ? 25 : 16, vanillaYOffset, 9, 9);
             }
         }
 
         // second pass: heart color
         if (absorp) {
             if (health <= 40) {
-                this.mc.getTextureManager().bindTexture(ICONS);
+                this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     if (health == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 169 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 169 + vanillaXOffset, vanillaYOffset, 9, 9);
                     } else if (health > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 160 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 160 + vanillaXOffset, vanillaYOffset, 9, 9);
                     }
                 }
             }
@@ -243,24 +245,24 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
                     if (lastColorHeart > 0 || health > 40) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }
         } else {
             if (health <= 40) {
-                this.mc.getTextureManager().bindTexture(ICONS);
+                this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     if (health == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 61 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 61 + vanillaXOffset, vanillaYOffset, 9, 9);
                     } else if (health > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 52 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 52 + vanillaXOffset, vanillaYOffset, 9, 9);
                     }
                 }
             }
@@ -271,13 +273,13 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
                     if (lastColorHeart > 0 || health > 40) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        this.drawTexturedModalRect(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }

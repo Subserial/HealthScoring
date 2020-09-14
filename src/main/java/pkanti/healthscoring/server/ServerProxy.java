@@ -7,13 +7,10 @@ import pkanti.healthscoring.network.HealthReporter;
 
 public class ServerProxy extends CommonProxy {
 
-    public void preInit() { super.preInit(); }
-
-    public void init() {
+    @Override
+    public void commonSetup() {
         MinecraftForge.EVENT_BUS.register(HealthReporter.class);
-        HealthScoring.logInfo("Registered Reporter");
-        super.init();
+        HealthScoring.logInfo("Registered Health Reporter");
+        super.commonSetup();
     }
-
-    public void postInit() {super.postInit();}
 }

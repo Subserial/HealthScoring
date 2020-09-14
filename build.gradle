@@ -110,13 +110,6 @@ publishing {
 }
  */
 
-
-sourceSets {
-    main {
-        //output.resourcesDir = output.classesDir // mcmod.info in debug build
-    }
-}
-
 // FOR POSTERITY
 // The following token replacement took me a few evenings to figure out
 // Issues I came across:
@@ -124,15 +117,6 @@ sourceSets {
 // 2. Modified files weren't compiled (manually set compileJava.source)
 // 3. expand vs ReplaceTokens (works the same but expand doesn't require an import (doesn't matter much))
 // 4. Very kind MinecraftForge questions and one angry dragon
-
-task updateVersion(type: Copy) {
-    from (sourceSets.main.java.srcDirs) { exclude 'mcmod.info' }
-    into project.tempBuildDir
-    expand "GRADLE_VERSION": project.full_version
-}
-
-compileJava.source = files(project.tempBuildDir)
-compileJava.dependsOn(updateVersion)
 
 task incrementBuildNumber {
     doFirst {

@@ -36,6 +36,17 @@ public class HealthMap {
         }
     }
 
+    public HealthInfo putLocal(UUID uuid, int newHealth) {
+        HealthInfo stored = health.get(uuid);
+        if (stored != null) {
+            stored.update(newHealth);
+        } else {
+            stored = new HealthInfo(newHealth, 0, 0, false);
+            health.put(uuid, stored);
+        }
+        return stored;
+    }
+
     public static class HealthInfo {
         private int health;
         private int absorption;
@@ -62,6 +73,10 @@ public class HealthMap {
             this.health = info.getHealth();
             this.absorption = info.getAbsorption();
             this.offset = info.getOffset();
+        }
+
+        public void update(int newHealth) {
+            this.health = newHealth;
         }
 
         public void markDirty() { this.lastTotal = this.health; }

@@ -16,7 +16,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void init() {
         MinecraftForge.EVENT_BUS.register(new ScoreboardRenderHelper());
-        HealthScoring.logInfo("Registered Scoreboard");
+        HealthScoring.logInfo("Registered Scoreboard Renderer");
         MinecraftForge.EVENT_BUS.register(map);
         HealthScoring.logInfo("Registered Map");
         super.init();

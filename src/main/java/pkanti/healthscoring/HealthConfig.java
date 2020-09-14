@@ -6,16 +6,11 @@ import net.minecraftforge.common.config.Config.*;
 @Config(modid = HealthScoring.MODID)
 public class HealthConfig {
 
-    @Comment({"Enable appending absorption hearts to scoreboard values. (default: true)",
-              "Absorption hearts increase the render complexity due to overlapping vanilla/modded textures,",
-              "but only when a player has any absorption hearts.",
-              "Disabling this will meld absorption into the total health displayed."})
-    @Name("Enable Absorption Hearts on Scoreboard")
+    @Comment("Enable extra absorption rendering when provided by server (disables sending on serverside)")
+    @Name("enableAbsorption")
     public static boolean enableAbsorption = true;
 
-    @Comment({"Enable displaying effects such as regen, posion, wither. (default: true)",
-            "On the client, this enables showing effects received.",
-            "On the server, this enables sending the players status information."})
-    @Name("Enable Displaying Effects")
+    @Comment("Enable rendering health effects (poison, wither, hardcore) when provided by server (disables sending on serverside)")
+    @Name("enableEffects")
     public static boolean enableEffects = true;
 }

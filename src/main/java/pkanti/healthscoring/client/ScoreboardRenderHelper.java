@@ -55,10 +55,15 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
             Score score = scoreboard.getOrCreateScore(name, objective);
             int displayScore = score.getScorePoints();
             HealthMap.HealthInfo health = HealthScoring.proxy.map.get(uuid);
+
+            // Update map with local data if the server doesn't broadcast it
             if (health == null) {
-                health = new HealthMap.HealthInfo(displayScore, 0, 0, false);
-                HealthScoring.proxy.map.update(uuid, health);
+                health = HealthScoring.proxy.map.putLocal(uuid, displayScore);
+            } else if (!health.isFromServer()) {
+                health.update(displayScore);
             }
+
+            // Prevent rendering normal data but enable blink variable
             score.setScorePoints(0);
             net.setDisplayHealth(0);
             if (health.getLastHealth() < health.getHealth())

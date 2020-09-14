@@ -2,7 +2,7 @@
 {
   "modid": "healthscoring",
   "name": "Health Scoring",
-  "description": "Mantle heart renderer for the tab menu health display.",
+  "description": "Mantle heart renderer for the tab display.",
   "version": "${version}",
   "mcversion": "${mcversion}",
   "url": "https://github.com/JaredR6/HealthScoring",

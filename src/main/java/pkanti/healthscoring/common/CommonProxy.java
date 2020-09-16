@@ -9,6 +9,6 @@ public class CommonProxy {
 
     public void commonSetup() {
         PacketHandler.registerPackets();
-        HealthScoring.logInfo("Registered HealthInfo Packets");
+        HealthScoring.logDebug("Registered HealthInfo Packets");
     }
 }

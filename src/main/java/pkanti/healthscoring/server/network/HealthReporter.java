@@ -1,4 +1,4 @@
-package pkanti.healthscoring.network;
+package pkanti.healthscoring.server.network;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -9,6 +9,8 @@ import net.minecraftforge.fml.network.PacketDistributor;
 import pkanti.healthscoring.HealthScoring;
 import pkanti.healthscoring.data.HealthMap;
 import net.minecraft.potion.Effects;
+import pkanti.healthscoring.network.PacketHandler;
+import pkanti.healthscoring.network.PacketHealth;
 
 @Mod.EventBusSubscriber(modid = HealthScoring.MODID, value = Dist.DEDICATED_SERVER)
 public class HealthReporter {

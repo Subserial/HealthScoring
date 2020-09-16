@@ -11,22 +11,47 @@ public class HealthConfig {
         public final ForgeConfigSpec.BooleanValue enableEffects;
 
         public Common(ForgeConfigSpec.Builder builder) {
-            builder.push("enableAbsorption");
+            builder.push("Display Properties");
             enableAbsorption = builder
-                    .comment("Enable extra absorption rendering when provided by server")
-                    .define("enabled", true);
-            builder.push("enableEffects");
+                    .comment(" Enable extra absorption rendering when provided by server")
+                    .define("enableAbsorption", true);
             enableEffects = builder
-                    .comment("Enable rendering health effects (poison, wither, hardcore) when provided by server")
-                    .define("enabled", true);
+                    .comment(" Enable rendering health effects (poison, wither, hardcore) when provided by server")
+                    .define("enableEffects", true);
+            builder.pop();
+        }
+    }
+
+    public static class Server {
+        public final ForgeConfigSpec.BooleanValue initializeScoreboard;
+        public final ForgeConfigSpec.ConfigValue<String> initialLabel;
+        public final ForgeConfigSpec.BooleanValue checkAgain;
+
+        public Server(ForgeConfigSpec.Builder builder) {
+            builder.push("Scoreboard Properties");
+            initializeScoreboard = builder
+                    .comment(" Enable creating a health objective and setting the tab display on world creation")
+                    .define("initializeScoreboard", true);
+            initialLabel = builder
+                    .comment(" Default label for a created objective")
+                    .define("initialLabel", "HP");
+            checkAgain = builder
+                    .comment(" Check for an active health-based objective on every startup")
+                    .define("checkAgain", false);
+            builder.pop();
         }
     }
 
     public static final Common COMMON;
     public static final ForgeConfigSpec COMMON_SPEC;
+    public static final Server SERVER;
+    public static final ForgeConfigSpec SERVER_SPEC;
     static {
         final Pair<Common, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(Common::new);
         COMMON = specPair.getLeft();
         COMMON_SPEC = specPair.getRight();
+        final Pair<Server, ForgeConfigSpec> specPair2 = new ForgeConfigSpec.Builder().configure(Server::new);
+        SERVER = specPair2.getLeft();
+        SERVER_SPEC = specPair2.getRight();
     }
 }

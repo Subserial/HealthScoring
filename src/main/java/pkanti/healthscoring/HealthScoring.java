@@ -7,6 +7,7 @@ import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pkanti.healthscoring.common.CommonProxy;
@@ -39,6 +40,12 @@ public class HealthScoring
     @EventHandler
     public void postInit(FMLPostInitializationEvent evt) { proxy.postInit(); }
 
+    @EventHandler
+    public void serverStart(FMLServerStartedEvent evt) { proxy.serverStart(); }
+
+    public static void logDebug(String s) {
+        logger.debug(s);
+    }
     public static void logInfo(String s) {
         logger.info(s);
     }

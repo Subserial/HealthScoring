@@ -156,7 +156,7 @@ public class ScoreboardRenderHelper extends GuiPlayerTabOverlay {
 
                 int health = hinfo.getHealth();
                 int absorp = hinfo.getAbsorption();
-                if (!HealthConfig.enableAbsorption) {
+                if (!HealthConfig.displayAbsorption()) {
                     health += absorp;
                     absorp = 0;
                 }

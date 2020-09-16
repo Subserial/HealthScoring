@@ -57,7 +57,7 @@ public class HealthMap {
         public HealthInfo(int health, int absorption, int offset, boolean fromServer) {
             this.health = health;
             this.absorption = absorption;
-            this.offset = HealthConfig.enableEffects ? offset : 0;
+            this.offset = HealthConfig.displayEffects() ? offset : 0;
             this.fromServer = fromServer;
             markDirty();
         }

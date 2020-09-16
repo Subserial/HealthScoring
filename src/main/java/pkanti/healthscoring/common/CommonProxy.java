@@ -9,10 +9,12 @@ public class CommonProxy {
 
     public void preInit() {
         PacketHandler.registerPackets();
-        HealthScoring.logInfo("Registered packets");
+        HealthScoring.logDebug("Registered HealthInfo Packets");
     }
 
     public void init() {}
 
     public void postInit() {}
+
+    public void serverStart() {}
 }

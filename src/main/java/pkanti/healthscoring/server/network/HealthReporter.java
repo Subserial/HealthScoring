@@ -1,4 +1,4 @@
-package pkanti.healthscoring.network;
+package pkanti.healthscoring.server.network;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.MobEffects;
@@ -8,6 +8,8 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import pkanti.healthscoring.HealthScoring;
 import pkanti.healthscoring.data.HealthMap;
+import pkanti.healthscoring.network.PacketHandler;
+import pkanti.healthscoring.network.PacketHealth;
 
 @Mod.EventBusSubscriber(modid = HealthScoring.MODID, value = Side.SERVER)
 public class HealthReporter {

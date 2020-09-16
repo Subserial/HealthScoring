@@ -11,9 +11,9 @@ public class ClientProxy extends CommonProxy {
     public void commonSetup() {
         map = new HealthMap();
         MinecraftForge.EVENT_BUS.register(new ScoreboardRenderHelper());
-        HealthScoring.logInfo("Registered Scoreboard Renderer");
+        HealthScoring.logDebug("Registered Scoreboard Renderer");
         MinecraftForge.EVENT_BUS.register(map);
-        HealthScoring.logInfo("Registered Health Map");
+        HealthScoring.logDebug("Registered Health Record Map");
         super.commonSetup();
     }
 

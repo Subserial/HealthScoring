@@ -33,7 +33,8 @@ public class HealthScoring
         proxy = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> ServerProxy::new);
 
         ModLoadingContext modContext = ModLoadingContext.get();
-        modContext.registerConfig(ModConfig.Type.COMMON, HealthConfig.COMMON_SPEC);
+        modContext.registerConfig(ModConfig.Type.COMMON, HealthConfig.COMMON_SPEC, "healthscoring-data.toml");
+        modContext.registerConfig(ModConfig.Type.SERVER, HealthConfig.SERVER_SPEC, "healthscoring-server.toml");
         modContext.registerExtensionPoint(ExtensionPoint.DISPLAYTEST,
                 () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
 
@@ -43,6 +44,9 @@ public class HealthScoring
 
     public void commonSetup(FMLCommonSetupEvent evt) { proxy.commonSetup(); }
 
+    public static void logDebug(String s) {
+        logger.debug(s);
+    }
     public static void logInfo(String s) {
         logger.info(s);
     }

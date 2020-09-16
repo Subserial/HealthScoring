@@ -83,6 +83,7 @@ processResources {
 }
 
 jar {
+    archiveName "${project.archivesBaseName}-${project.full_version}.jar"
     manifest {
         attributes([
             "FMLAT": "hs_at.cfg",

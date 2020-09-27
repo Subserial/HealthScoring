@@ -2,12 +2,13 @@ modLoader="javafml" #mandatory
 loaderVersion="[31,)"
 issueTrackerURL="https://github.com/JaredR6/HealthScoring" #optional
 logoFile="HS.png"
+authors="PK_Anti"
+license="MIT"
 
 [[mods]]
 modId="healthscoring"
 displayName="Health Scoring"
 version="${version}"
-authors="PK_Anti"
 description='Mantle heart renderer for the tab display.'
 
 [[dependencies.healthscoring]]

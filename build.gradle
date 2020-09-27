@@ -31,7 +31,7 @@ sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = co
 
 minecraft {
     mappings channel: 'snapshot', version: config.mappings_version
-    accessTransformer = file('src/main/resources/META-INF/hs_at.cfg')
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
     runs {
         client {
@@ -80,14 +80,15 @@ processResources {
         exclude 'META-INF/mods.toml'
     }
 }
-
+"""
 jar {
     manifest {
         attributes([
-            "FMLAT": "hs_at.cfg",
+            "FMLAT": "accesstransformer.cfg",
         ])
     }
 }
+"""
 
 // Example configuration to allow publishing using the maven-publish task
 // This is the preferred method to reobfuscate your jar file

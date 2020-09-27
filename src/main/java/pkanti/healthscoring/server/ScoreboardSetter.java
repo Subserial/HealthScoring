@@ -6,11 +6,8 @@ import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextComponent;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.storage.DimensionSavedDataManager;
 import net.minecraft.world.storage.WorldSavedData;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -53,7 +50,7 @@ public class ScoreboardSetter extends WorldSavedData {
     @SubscribeEvent
     public static void prepareScoreboard(FMLServerStartedEvent evt) {
         MinecraftServer server = evt.getServer();
-        ScoreboardSetter setter = get(server.getWorld(DimensionType.OVERWORLD));
+        ScoreboardSetter setter = get(server.getWorld(World.OVERWORLD));
         if (HealthConfig.SERVER.initializeScoreboard.get()
                 && (!setter.scoreboardChecked
                     || HealthConfig.SERVER.checkAgain.get())) {

@@ -1,12 +1,13 @@
 package pkanti.healthscoring.client;
 
-import com.google.common.collect.Ordering;
 import com.mojang.authlib.GameProfile;
+import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.overlay.PlayerTabOverlayGui;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.client.network.play.NetworkPlayerInfo;
 import net.minecraft.scoreboard.*;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
@@ -29,7 +30,6 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
     // resources from Mantle
     private static final ResourceLocation ICON_HEARTS = new ResourceLocation(Mantle.modId, "textures/gui/hearts.png");
     private static final ResourceLocation ICON_ABSORB = new ResourceLocation(Mantle.modId, "textures/gui/absorb.png");
-
 
     private final Minecraft mc = Minecraft.getInstance();
 
@@ -82,6 +82,7 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
 
 
         // extra setup stuff
+        MatrixStack stack = evt.getMatrixStack();
         int width = evt.getWindow().getScaledWidth();
         int updateCounter = mc.ingameGUI.getTicks();
         ClientPlayNetHandler client = mc.player.connection;
@@ -95,7 +96,7 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
         // mimic intermediate variables
         int maxTextWidth = 0;
         for (NetworkPlayerInfo inst : players) {
-            int textWidth = mc.fontRenderer.getStringWidth(this.getDisplayName(inst).getFormattedText());
+            int textWidth = mc.fontRenderer.getStringPropertyWidth(this.getDisplayName(inst));
             maxTextWidth = Math.max(maxTextWidth, textWidth);
         }
         players = players.subList(0, Math.min(players.size(), 80));
@@ -111,11 +112,11 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
 
         if (header != null)
         {
-            List<String> headers = this.mc.fontRenderer.listFormattedStringToWidth(header.getFormattedText(), width - 50);
+            List<IReorderingProcessor> headers = this.mc.fontRenderer.trimStringToWidth(header, width - 50);
 
-            for (String s : headers)
+            for (IReorderingProcessor irp : headers)
             {
-                sizeX = Math.max(sizeX, this.mc.fontRenderer.getStringWidth(s));
+                sizeX = Math.max(sizeX, this.mc.fontRenderer.func_243245_a(irp));
                 startY += this.mc.fontRenderer.FONT_HEIGHT;
             }
 
@@ -165,14 +166,14 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
 
                 if (absorp == 0) {
                     // Basic render
-                    drawHearts(heartX, posY, delta, health, 10, 0, hinfo.getOffset(), blink, false);
+                    drawHearts(heartX, posY, delta, health, 10, 0, hinfo.getOffset(), blink, false, stack);
                 } else {
                     // Expanded render (overlapping containers)
                     for (int segment = 0; segment < 10; segment++) {
-                        drawHearts(heartX, posY, delta, health, 1, segment, hinfo.getOffset(), blink, false);
+                        drawHearts(heartX, posY, delta, health, 1, segment, hinfo.getOffset(), blink, false, stack);
                     }
                     for (int segment = 0; segment < absorpCount; segment++) {
-                        drawHearts(heartX + delta * 10, posY, delta, absorp, 1, segment, hinfo.getOffset(), blink, true);
+                        drawHearts(heartX + delta * 10, posY, delta, absorp, 1, segment, hinfo.getOffset(), blink, true, stack);
                     }
                 }
             }
@@ -184,7 +185,7 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
         mc.getProfiler().endSection();
     }
 
-    private void drawHearts(int posX, int posY, int delta, int health, int count, int segmentStart, int effect, boolean blink, boolean absorp) {
+    private void drawHearts(int posX, int posY, int delta, int health, int count, int segmentStart, int effect, boolean blink, boolean absorp, MatrixStack stack) {
         int segmentEnd = segmentStart + count;
 
         // Parse offset value
@@ -209,20 +210,20 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
             for (int segment = segmentStart; segment < segmentEnd; segment++) {
                 if (health > 20 + segment * 2 + 1) {
                     this.mc.getTextureManager().bindTexture(ICON_ABSORB);
-                    this.blit(posX + segment * delta, posY, 0, 54, 9, 9);
+                    this.blit(stack, posX + segment * delta, posY, 0, 54, 9, 9);
                 } else {
                     this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
-                    this.blit(posX + segment * delta, posY, 16, vanillaYOffset, 9, 9);
+                    this.blit(stack, posX + segment * delta, posY, 16, vanillaYOffset, 9, 9);
                     if (health == 20 + segment * 2 + 1) {
                         this.mc.getTextureManager().bindTexture(ICON_ABSORB);
-                        this.blit(posX + segment * delta, posY, 0, 54, 5, 9);
+                        this.blit(stack, posX + segment * delta, posY, 0, 54, 5, 9);
                     }
                 }
             }
         } else {
             this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
             for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                this.blit(posX + segment * delta, posY, blink ? 25 : 16, vanillaYOffset, 9, 9);
+                this.blit(stack, posX + segment * delta, posY, blink ? 25 : 16, vanillaYOffset, 9, 9);
             }
         }
 
@@ -232,9 +233,9 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
                 this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     if (health == segment * 2 + 1) {
-                        this.blit(posX + segment * delta, posY, 169 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 169 + vanillaXOffset, vanillaYOffset, 9, 9);
                     } else if (health > segment * 2) {
-                        this.blit(posX + segment * delta, posY, 160 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 160 + vanillaXOffset, vanillaYOffset, 9, 9);
                     }
                 }
             }
@@ -245,13 +246,13 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
                     if (lastColorHeart > 0 || health > 40) {
-                        this.blit(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }
@@ -260,9 +261,9 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
                 this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     if (health == segment * 2 + 1) {
-                        this.blit(posX + segment * delta, posY, 61 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 61 + vanillaXOffset, vanillaYOffset, 9, 9);
                     } else if (health > segment * 2) {
-                        this.blit(posX + segment * delta, posY, 52 + vanillaXOffset, vanillaYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 52 + vanillaXOffset, vanillaYOffset, 9, 9);
                     }
                 }
             }
@@ -273,13 +274,13 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
                     if (lastColorHeart > 0 || health > 40) {
-                        this.blit(posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        this.blit(posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }

@@ -19,6 +19,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.common.Mod;
 import pkanti.healthscoring.HealthConfig;
 import pkanti.healthscoring.HealthScoring;
+import pkanti.healthscoring.client.render.IHeartRender;
 import pkanti.healthscoring.data.HealthMap;
 import slimeknights.mantle.Mantle;
 
@@ -32,14 +33,16 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
     private static final ResourceLocation ICON_ABSORB = new ResourceLocation(Mantle.modId, "textures/gui/absorb.png");
 
     private final Minecraft mc = Minecraft.getInstance();
+    private final IHeartRender renderSource;
 
-    public ScoreboardRenderHelper() {
+    public ScoreboardRenderHelper(IHeartRender renderSource) {
         super(Minecraft.getInstance(), Minecraft.getInstance().ingameGUI);
+        this.renderSource = renderSource;
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void renderScoreboardHealth(RenderGameOverlayEvent.Pre evt) {
-        if (evt.getType() != RenderGameOverlayEvent.ElementType.PLAYER_LIST || evt.isCanceled())
+        if (renderSource == null || evt.getType() != RenderGameOverlayEvent.ElementType.PLAYER_LIST || evt.isCanceled())
             return;
 
         Scoreboard scoreboard = mc.world.getScoreboard();
@@ -72,7 +75,7 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void renderScoreboardHealthPost(RenderGameOverlayEvent.Post evt) {
-        if (evt.getType() != RenderGameOverlayEvent.ElementType.PLAYER_LIST || evt.isCanceled())
+        if (renderSource == null || evt.getType() != RenderGameOverlayEvent.ElementType.PLAYER_LIST || evt.isCanceled())
             return;
 
         Scoreboard scoreboard = mc.world.getScoreboard();
@@ -101,7 +104,7 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
         }
         players = players.subList(0, Math.min(players.size(), 80));
         int cols = (players.size() - 1) / 20 + 1;
-        int rows = (int)Math.ceil((float)players.size() / cols);
+        int rows = (int) Math.ceil((float) players.size() / cols);
         boolean encrypted = mc.getConnection().getNetworkManager().isEncrypted();
         int wrapWidth = width - 50;
         int displayLength = 90;
@@ -110,12 +113,10 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
         int startX = width / 2 - sizeX / 2;
         int startY = 10;
 
-        if (header != null)
-        {
+        if (header != null) {
             List<IReorderingProcessor> headers = this.mc.fontRenderer.trimStringToWidth(header, width - 50);
 
-            for (IReorderingProcessor irp : headers)
-            {
+            for (IReorderingProcessor irp : headers) {
                 sizeX = Math.max(sizeX, this.mc.fontRenderer.func_243245_a(irp));
                 startY += this.mc.fontRenderer.FONT_HEIGHT;
             }
@@ -128,13 +129,6 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
             int yindex = i % rows;
             int posX = startX + xindex * (rectLength + 5);
             int posY = startY + yindex * 9;
-
-            /*
-            GlStateManager.color(1, 1, 1, 1);
-            GlStateManager.enableAlpha();
-            GlStateManager.enableBlend();
-            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-             */
 
             NetworkPlayerInfo info = players.get(i);
             GameProfile profile = info.getGameProfile();
@@ -166,124 +160,18 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
 
                 if (absorp == 0) {
                     // Basic render
-                    drawHearts(heartX, posY, delta, health, 10, 0, hinfo.getOffset(), blink, false, stack);
+                    renderSource.drawHearts(stack, this, heartX, posY, delta, health, 10, 0, hinfo.getOffset(), blink, false);
                 } else {
                     // Expanded render (overlapping containers)
                     for (int segment = 0; segment < 10; segment++) {
-                        drawHearts(heartX, posY, delta, health, 1, segment, hinfo.getOffset(), blink, false, stack);
+                        renderSource.drawHearts(stack, this, heartX, posY, delta, health, 1, segment, hinfo.getOffset(), blink, false);
                     }
                     for (int segment = 0; segment < absorpCount; segment++) {
-                        drawHearts(heartX + delta * 10, posY, delta, absorp, 1, segment, hinfo.getOffset(), blink, true, stack);
+                        renderSource.drawHearts(stack, this, heartX + delta * 10, posY, delta, absorp, 1, segment, hinfo.getOffset(), blink, true);
                     }
                 }
             }
         }
-/*
-        GlStateManager.disableBlend();
-        GlStateManager.disableAlpha();
- */
         mc.getProfiler().endSection();
-    }
-
-    private void drawHearts(int posX, int posY, int delta, int health, int count, int segmentStart, int effect, boolean blink, boolean absorp, MatrixStack stack) {
-        int segmentEnd = segmentStart + count;
-
-        // Parse offset value
-        int vanillaXOffset = 0;
-        int vanillaYOffset = 0;
-        int mantleXOffset = 0;
-        int mantleYOffset = 0;
-        if ((effect & 0x1) != 0) { // poison (overrides wither)
-            vanillaXOffset += 36;
-            mantleYOffset += 9;
-        } else if ((effect & 0x2) != 0) { // wither
-            vanillaXOffset += 72;
-            mantleYOffset += 18;
-        }
-        if ((effect & 0x4) != 0) { // hardcore
-            vanillaYOffset += 45;
-            mantleYOffset += 27;
-        }
-
-        // first pass: containers
-        if (absorp && health > 20) {
-            for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                if (health > 20 + segment * 2 + 1) {
-                    this.mc.getTextureManager().bindTexture(ICON_ABSORB);
-                    this.blit(stack, posX + segment * delta, posY, 0, 54, 9, 9);
-                } else {
-                    this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
-                    this.blit(stack, posX + segment * delta, posY, 16, vanillaYOffset, 9, 9);
-                    if (health == 20 + segment * 2 + 1) {
-                        this.mc.getTextureManager().bindTexture(ICON_ABSORB);
-                        this.blit(stack, posX + segment * delta, posY, 0, 54, 5, 9);
-                    }
-                }
-            }
-        } else {
-            this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
-            for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                this.blit(stack, posX + segment * delta, posY, blink ? 25 : 16, vanillaYOffset, 9, 9);
-            }
-        }
-
-        // second pass: heart color
-        if (absorp) {
-            if (health <= 40) {
-                this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
-                for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                    if (health == segment * 2 + 1) {
-                        this.blit(stack, posX + segment * delta, posY, 169 + vanillaXOffset, vanillaYOffset, 9, 9);
-                    } else if (health > segment * 2) {
-                        this.blit(stack, posX + segment * delta, posY, 160 + vanillaXOffset, vanillaYOffset, 9, 9);
-                    }
-                }
-            }
-            if (health > 20) {
-                this.mc.getTextureManager().bindTexture(ICON_ABSORB);
-                int currColorHeart = (int) Math.ceil((float) (health - 20) / 20) % 11;
-                int lastColorHeart = (int) Math.floor((float) (health - 20) / 20) % 11;
-                for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                    // last color
-                    if (lastColorHeart > 0 || health > 40) {
-                        this.blit(stack, posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
-                    }
-                    // curr color (half heart and full heart)
-                    if (health % 20 == segment * 2 + 1) {
-                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
-                    } else if (health % 20 > segment * 2) {
-                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
-                    }
-                }
-            }
-        } else {
-            if (health <= 40) {
-                this.mc.getTextureManager().bindTexture(GUI_ICONS_LOCATION);
-                for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                    if (health == segment * 2 + 1) {
-                        this.blit(stack, posX + segment * delta, posY, 61 + vanillaXOffset, vanillaYOffset, 9, 9);
-                    } else if (health > segment * 2) {
-                        this.blit(stack, posX + segment * delta, posY, 52 + vanillaXOffset, vanillaYOffset, 9, 9);
-                    }
-                }
-            }
-            if (health > 20) {
-                this.mc.getTextureManager().bindTexture(ICON_HEARTS);
-                int currColorHeart = (int) Math.ceil((float) (health - 20) / 20) % 11;
-                int lastColorHeart = (int) Math.floor((float) (health - 20) / 20) % 11;
-                for (int segment = segmentStart; segment < segmentEnd; segment++) {
-                    // last color
-                    if (lastColorHeart > 0 || health > 40) {
-                        this.blit(stack, posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
-                    }
-                    // curr color (half heart and full heart)
-                    if (health % 20 == segment * 2 + 1) {
-                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
-                    } else if (health % 20 > segment * 2) {
-                        this.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
-                    }
-                }
-            }
-        }
     }
 }

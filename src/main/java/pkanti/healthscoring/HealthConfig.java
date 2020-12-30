@@ -9,6 +9,7 @@ public class HealthConfig {
     public static class Common {
         public final ForgeConfigSpec.BooleanValue enableAbsorption;
         public final ForgeConfigSpec.BooleanValue enableEffects;
+        public final ForgeConfigSpec.ConfigValue<String> preferredRender;
 
         public Common(ForgeConfigSpec.Builder builder) {
             builder.push("Display Properties");
@@ -18,6 +19,9 @@ public class HealthConfig {
             enableEffects = builder
                     .comment(" Enable rendering health effects (poison, wither, hardcore) when provided by server")
                     .define("enableEffects", true);
+            preferredRender = builder
+                    .comment(" ID of mod to render hearts. Ignored if mod is not installed.")
+                    .define("preferredRender", "");
             builder.pop();
         }
     }

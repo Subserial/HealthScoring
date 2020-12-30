@@ -3,6 +3,7 @@ package pkanti.healthscoring.client;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.InterModComms;
 import net.minecraftforge.fml.ModList;
+import pkanti.healthscoring.HealthConfig;
 import pkanti.healthscoring.HealthScoring;
 import pkanti.healthscoring.client.render.HeartRenderFactory;
 import pkanti.healthscoring.client.render.IHeartRender;
@@ -17,10 +18,18 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void commonSetup() {
         map = new HealthMap();
-        if (ModList.get().isLoaded("mantle"))
-            source = "mantle";
-        else if (ModList.get().isLoaded("healthoverlay"))
-            source = "healthoverlay";
+        String configSource = HealthConfig.COMMON.preferredRender.get();
+        if (!configSource.equals("") && ModList.get().isLoaded(configSource)) {
+            source = configSource;
+        } else if (!configSource.equals("")) {
+            HealthScoring.logWarn(configSource + " was not found, attempting to use defaults.");
+        }
+        if (source.equals("")) {
+            if (ModList.get().isLoaded("mantle"))
+                source = "mantle";
+            else if (ModList.get().isLoaded("healthoverlay"))
+                source = "healthoverlay";
+        }
 
         IHeartRender renderSource = HeartRenderFactory.getHeartRender(source);
         if (renderSource != null) {

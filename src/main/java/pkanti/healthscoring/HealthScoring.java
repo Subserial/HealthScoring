@@ -50,6 +50,9 @@ public class HealthScoring
     public static void logInfo(String s) {
         logger.info(s);
     }
+    public static void logWarn(String s) {
+        logger.warn(s);
+    }
     public static void logError(String s) {
         logger.error(s);
     }

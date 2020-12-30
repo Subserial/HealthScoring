@@ -83,7 +83,6 @@ public class ScoreboardRenderHelper extends PlayerTabOverlayGui {
         if (objective == null || objective.getRenderType() != ScoreCriteria.RenderType.HEARTS)
             return;
 
-
         // extra setup stuff
         MatrixStack stack = evt.getMatrixStack();
         int width = evt.getWindow().getScaledWidth();

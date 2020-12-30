@@ -57,6 +57,9 @@ minecraft {
 
 repositories {
     mavenCentral()
+    maven { // CurseMaven (HealthOverlay)
+        url "https://www.cursemaven.com"
+    }
     maven { // Mantle
         name 'DVS1 Maven FS'
         url 'http://dvs1.progwml6.com/files/maven'
@@ -67,6 +70,7 @@ dependencies {
     minecraft "net.minecraftforge:forge:${config.mc_version}-${config.forge_version}"
 
     compile fg.deobf("slimeknights.mantle:Mantle:${config.mc_version_mantle}-${config.mantle_version}")
+    compile "curse.maven:health-overlay-368223:3118173"
 }
 
 processResources {

@@ -9,12 +9,14 @@ import slimeknights.mantle.Mantle;
 
 public class HeartRenderMantle implements IHeartRender {
     private static final ResourceLocation ICON_HEARTS = new ResourceLocation(Mantle.modId, "textures/gui/hearts.png");
-    private static final ResourceLocation ICON_ABSORB = new ResourceLocation(Mantle.modId, "textures/gui/absorb.png");
+    private static final ResourceLocation ICON_ABSORP = new ResourceLocation(Mantle.modId, "textures/gui/absorb.png");
 
     public String getName() {
         return "mantle";
     }
 
+    // V1
+    // This code was copied from the previous version and is MUCH older than that of HealthOverlay. I may rewrite this.
     public void drawHearts(MatrixStack stack, PlayerTabOverlayGui gui, int posX, int posY, int delta, int health, int heartCount, int segmentStart, int effect, boolean blink, boolean absorp) {
         Minecraft mc = Minecraft.getInstance();
         int segmentEnd = segmentStart + heartCount;
@@ -40,13 +42,13 @@ public class HeartRenderMantle implements IHeartRender {
         if (absorp && health > 20) {
             for (int segment = segmentStart; segment < segmentEnd; segment++) {
                 if (health > 20 + segment * 2 + 1) {
-                    mc.getTextureManager().bindTexture(ICON_ABSORB);
+                    mc.getTextureManager().bindTexture(ICON_ABSORP);
                     gui.blit(stack, posX + segment * delta, posY, 0, 54, 9, 9);
                 } else {
                     mc.getTextureManager().bindTexture(AbstractGui.GUI_ICONS_LOCATION);
                     gui.blit(stack, posX + segment * delta, posY, 16, vanillaYOffset, 9, 9);
                     if (health == 20 + segment * 2 + 1) {
-                        mc.getTextureManager().bindTexture(ICON_ABSORB);
+                        mc.getTextureManager().bindTexture(ICON_ABSORP);
                         gui.blit(stack, posX + segment * delta, posY, 0, 54, 5, 9);
                     }
                 }
@@ -71,19 +73,19 @@ public class HeartRenderMantle implements IHeartRender {
                 }
             }
             if (health > 20) {
-                mc.getTextureManager().bindTexture(ICON_ABSORB);
-                int currColorHeart = (int) Math.ceil((float) (health - 20) / 20) % 11;
-                int lastColorHeart = (int) Math.floor((float) (health - 20) / 20) % 11;
+                mc.getTextureManager().bindTexture(ICON_ABSORP);
+                int currColorHeart = (int) Math.ceil((float) (health - 40) / 20) % 11;
+                int lastColorHeart = (int) Math.floor((float) (health - 40) / 20) % 11;
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
-                    if (lastColorHeart > 0 || health > 40) {
-                        gui.blit(stack, posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                    if (health > 40) {
+                        gui.blit(stack, posX + segment * delta, posY, 18 * lastColorHeart + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        gui.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
+                        gui.blit(stack, posX + segment * delta, posY, 18 * currColorHeart + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        gui.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        gui.blit(stack, posX + segment * delta, posY, 18 * currColorHeart + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }
@@ -100,18 +102,18 @@ public class HeartRenderMantle implements IHeartRender {
             }
             if (health > 20) {
                 mc.getTextureManager().bindTexture(ICON_HEARTS);
-                int currColorHeart = (int) Math.ceil((float) (health - 20) / 20) % 11;
-                int lastColorHeart = (int) Math.floor((float) (health - 20) / 20) % 11;
+                int currColorHeart = (int) Math.ceil((float) (health - 40) / 20) % 11;
+                int lastColorHeart = (int) Math.floor((float) (health - 40) / 20) % 11;
                 for (int segment = segmentStart; segment < segmentEnd; segment++) {
                     // last color
-                    if (lastColorHeart > 0 || health > 40) {
-                        gui.blit(stack, posX + segment * delta, posY, 18 * (lastColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                    if (health > 40) {
+                        gui.blit(stack, posX + segment * delta, posY, 18 * lastColorHeart + mantleXOffset, mantleYOffset, 9, 9);
                     }
                     // curr color (half heart and full heart)
                     if (health % 20 == segment * 2 + 1) {
-                        gui.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + 9 + mantleXOffset, mantleYOffset, 9, 9);
+                        gui.blit(stack, posX + segment * delta, posY, 18 * currColorHeart + 9 + mantleXOffset, mantleYOffset, 9, 9);
                     } else if (health % 20 > segment * 2) {
-                        gui.blit(stack, posX + segment * delta, posY, 18 * (currColorHeart - 1) + mantleXOffset, mantleYOffset, 9, 9);
+                        gui.blit(stack, posX + segment * delta, posY, 18 * currColorHeart + mantleXOffset, mantleYOffset, 9, 9);
                     }
                 }
             }

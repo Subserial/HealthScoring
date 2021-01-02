@@ -9,11 +9,4 @@ license="MIT"
 modId="healthscoring"
 displayName="Health Scoring"
 version="${version}"
-description='Mantle heart renderer for the tab display.'
-
-[[dependencies.healthscoring]]
-    modId="mantle"
-    mandatory=true
-    versionRange="[${mantleversion},)"
-    ordering="AFTER"
-    side="CLIENT"
+description='Advanced heart renderer for the tab display.'

@@ -69,8 +69,11 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${config.mc_version}-${config.forge_version}"
 
-    compile fg.deobf("slimeknights.mantle:Mantle:${config.mc_version_mantle}-${config.mantle_version}")
-    compile "curse.maven:health-overlay-368223:3118173"
+    compileOnly fg.deobf("slimeknights.mantle:Mantle:${config.mc_version_mantle}-${config.mantle_version}")
+    compileOnly "curse.maven:health-overlay-368223:3118173"
+
+    //runtimeOnly fg.deobf("slimeknights.mantle:Mantle:${config.mc_version_mantle}-${config.mantle_version}")
+    //runtimeOnly "curse.maven:health-overlay-368223:3118173" // crashes in debug launch
 }
 
 processResources {
